@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.h5
+*.avi
+*.json
+*.jpg
+.env
+.DS_Store
+.idea/
+.vscode/
+

@@ -1,0 +1,10 @@
+numpy
+opencv-python
+h5py
+ujson
+tqdm
+loguru
+black
+flake8
+ipython
+pytest
