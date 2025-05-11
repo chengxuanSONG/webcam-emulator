@@ -114,7 +114,7 @@ def launch_app():
         frames.clear()
         frame_count = 0
 
-        window_name = "Recording..."
+        window_name = "Recording... Press 'q' to stop early. "
         cv2.namedWindow(window_name)
 
         while frame_count < total_frames:
@@ -224,7 +224,7 @@ def launch_app():
     try:
         probe_cam = cv2.VideoCapture(0)
         fps_range = probe_cam.get(cv2.CAP_PROP_FPS)
-        fps_label = tk.Label(root, text=f"⚙️Must be an integer; Your build-in camera reports max FPS: {fps_range:.1f}", fg="gray", bg="#f0f0f5")
+        fps_label = tk.Label(root, text=f"⚙️Must be an integer; Your built-in camera reports max FPS: {fps_range:.1f}", fg="gray", bg="#f0f0f5")
         fps_label.pack()
         probe_cam.release()
     except Exception as e:

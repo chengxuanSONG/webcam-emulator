@@ -24,19 +24,19 @@ This project provides a Python-based GUI application to emulate scientific data 
 
 ## 📦 Installation
 
-> 🪟 This application is designed and tested on **Windows 10/11** systems with a built-in or USB webcam.
+> This application is designed and tested on **Windows 10/11** systems with a built-in or USB webcam.
 
 To get started, follow these steps:
 
 ### 1. 📁 Download the Latest Release
 
 - Go to the [Releases](https://github.com/chengxuanSONG/webcam-emulator/releases) page.
-- Download the latest `.zip` archive (e.g., `webcam-emulator-v1.2.0.zip`).
+- Download the latest `.zip` archive (e.g., `webcam-emulator-v1.2.1.zip`).
 - Extract the files to any folder on your computer.
 - Then, open a terminal (e.g.PowerShell, CMD or Anaconda Prompt) and use `cd` to change into the extracted folder:
 
 ```bash
-cd yourPath_to\webcam-emulator-v1.2.0
+cd yourPath_to\webcam-emulator-v1.2.1
 ```
 
 
@@ -58,8 +58,41 @@ python bidsrec.py
 pip install -r requirements.txt
 python bidsrec.py
 ```
+### 3. 🧩 Known Startup Warning (Windows)
 
-## 🗂 Folder Structure (BIDS-like)
+If you see messages like the following in the terminal when launching the app bidsrec.py:
+
+```bash    
+[ERROR:0@8.563] global obsensor_uvc_stream_channel.cpp:158 cv::obsensor::getStreamChannelGroup Camera index out of range
+[WARN:0@7.617] global cap_msmf.cpp:476 `anonymous-namespace'::SourceReaderCB::OnReadSample videoio(MSMF): OnReadSample() is called with error status: -1072875772 
+```
+
+📌 **Don't worry!**  
+These warnings are normal when OpenCV tries to probe camera devices using the Microsoft Media Foundation (MSMF) backend and doesn't find any additional sources.
+
+✅ The application will continue to work normally. Just wait a few seconds for it to finish scanning available devices.
+
+
+
+
+
+
+## 🛠 GUI Controls
+
+| Field            | Description                                 |
+|------------------|---------------------------------------------|
+| Subject ID       | Participant code (e.g. `sub-01`)            |
+| Session ID       | Session block (e.g. `ses-01`)               |
+| FPS              | Frame rate (e.g. 20)                        |
+| Number of Frames | Total frames to capture (e.g. 100)          |
+| Gain / Exposure  | Camera light sensitivity (optional)         |
+| Data Type        | `func`, `anat`, `fmap`, or `custom`         |
+| Custom File Label| Naming base for all output files            |
+| Output Folder    | Root path to save data                      |
+
+---
+
+## 🗂 Output Folder Structure (BIDS-like)
 
 <output_folder>/  
 ├── sub-01/  
@@ -73,29 +106,13 @@ python bidsrec.py
 
 ---
 
-## 🛠 GUI Controls
-
-| Field             | Description                                 |
-|------------------|---------------------------------------------|
-| Subject ID       | Participant code (e.g. `sub-01`)            |
-| Session ID       | Session block (e.g. `ses-01`)               |
-| FPS              | Frame rate (e.g. 20)                        |
-| Number of Frames | Total frames to capture (e.g. 100)          |
-| Gain / Exposure  | Camera light sensitivity (optional)         |
-| Output Folder    | Root path to save data                      |
-| File Name Base   | Naming base for all output files            |
-| Data Type        | `func`, `anat`, `fmap`, or `custom`         |
-
----
-
-
-## 💾 Output Formats
+## 💾 Output Files Formats
 
 - `.avi` – raw video file  
 - `.h5` – RGB image stack in HDF5 format  
 - `.json` – camera & recording metadata  
 - `SQLite` – persistent session logging  
-- `Channels/` – separate R/G/B image streams  
+- `Channels/` – separate R/G/B image streams (Optional)
 
 ---
 
