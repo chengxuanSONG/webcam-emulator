@@ -24,32 +24,39 @@ This project provides a Python-based GUI application to emulate scientific data 
 
 ## 📦 Installation
 
+> 🪟 This application is designed and tested on **Windows 10/11** systems with a built-in or USB webcam.
+
 To get started, follow these steps:
 
 ### 1. 📁 Download the Latest Release
 
 - Go to the [Releases](https://github.com/chengxuanSONG/webcam-emulator/releases) page.
-- Download the latest `.zip` archive (e.g., `webcam-emulator-v1.1.0.zip`).
+- Download the latest `.zip` archive (e.g., `webcam-emulator-v1.2.0.zip`).
 - Extract the files to any folder on your computer.
+- Then, open a terminal (e.g.PowerShell, CMD or Anaconda Prompt) and use `cd` to change into the extracted folder:
+
+```bash
+cd yourPath_to\webcam-emulator-v1.2.0
+```
 
 
 ### 2. 🛠️ Set Up Your Python Environment
 
 > First-time users need to install required packages. You can use either conda or pip:
 
-### Option 1 (Recommend) – conda users:
+### Option 1 (Recommended) – conda users:
 
 ```bash
 conda env create -f environment.yml
 conda activate webcam_emulator
-python app.py
+python bidsrec.py
 ```
 
 ### Option 2 – pip users:
 
 ```bash
 pip install -r requirements.txt
-python app.py
+python bidsrec.py
 ```
 
 ## 🗂 Folder Structure (BIDS-like)

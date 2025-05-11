@@ -34,7 +34,8 @@ def launch_app():
             if not ret:
                 break
             cv2.imshow("AVI Preview", frame)
-            if cv2.waitKey(30) & 0xFF == ord('q'):
+            key = cv2.waitKey(30)
+            if key == ord('q') or cv2.getWindowProperty("AVI Preview", cv2.WND_PROP_VISIBLE) < 1:
                 break
         cap.release()
         cv2.destroyAllWindows()
@@ -71,10 +72,15 @@ def launch_app():
 
     def start_recording():
         nonlocal frames, frame_count, last_output_dir
-        subject_id = subject_entry.get()
-        session_id = session_entry.get()
+        subject_id = subject_entry.get().strip().replace('\n', '').replace('\r', '')
+        session_id = session_entry.get().strip().replace('\n', '').replace('\r', '')
         task_type = task_combo.get()
-        fps = int(fps_entry.get())
+        #fps = int(fps_entry.get())
+        fps_text = fps_entry.get()
+        if not fps_text.isdigit():
+            messagebox.showerror("Input Error", "FPS input must be an integer")
+            return
+        fps = int(fps_text)
         if frame_mode.get() == "frame":
             total_frames = int(total_entry.get())
         else:
@@ -94,6 +100,8 @@ def launch_app():
         if not subject_id or not session_id or not fps or not total_frames or not output_dir or not filename_base:
             messagebox.showerror("Input Error", "Please enter all fields.")
             return
+        
+        
 
         last_output_dir = output_dir
 
@@ -183,6 +191,8 @@ def launch_app():
         if help_text:
             tk.Label(frame, text=help_text, bg="#f0f0f5", font=("Arial", 9), fg="gray").pack(anchor="w")
         return entry
+    
+    
 
     # Combine Subject ID and Session ID on the same line
     id_frame = tk.Frame(root, bg="#f0f0f5")
@@ -209,8 +219,16 @@ def launch_app():
     tk.Label(fps_left, text="Frame Rate (FPS)", bg="#f0f0f5", font=("Arial", 11)).pack(anchor="w")
     fps_entry = tk.Entry(fps_left, font=("Arial", 11))
     fps_entry.pack(fill="x")
-    tk.Label(fps_left, text="Must be an integer (e.g., 20, 30)", bg="#f0f0f5", fg="gray", font=("Arial", 9)).pack(anchor="w")
+    #tk.Label(fps_left, text="Must be an integer (e.g., 20, 30)", bg="#f0f0f5", fg="gray", font=("Arial", 9)).pack(anchor="w")
 
+    try:
+        probe_cam = cv2.VideoCapture(0)
+        fps_range = probe_cam.get(cv2.CAP_PROP_FPS)
+        fps_label = tk.Label(root, text=f"⚙️Must be an integer; Your build-in camera reports max FPS: {fps_range:.1f}", fg="gray", bg="#f0f0f5")
+        fps_label.pack()
+        probe_cam.release()
+    except Exception as e:
+        print("FPS check failed:", e)
 
     frame_mode = tk.StringVar(value="frame") 
 
@@ -325,7 +343,25 @@ def launch_app():
     filename_entry = tk.Entry(filename_frame, font=("Arial", 10), width=22)
     filename_entry.pack(side=tk.LEFT, padx=(4, 0))
     # Recording label hint
-    tk.Label(root, text="                                                                     e.g. sub-01_ses-01_func_task-video", bg="#f0f0f5", fg="gray", font=("Arial", 9)).pack(anchor="w", padx=12, pady=(0, 2))
+    tk.Label(root, text="                                                                     e.g. sub-01/ses-01/func/task-video", bg="#f0f0f5", fg="gray", font=("Arial", 9)).pack(anchor="w", padx=12, pady=(0, 2))
+
+    # Preview current BIDS path live
+    preview_path_label = tk.Label(root, text="📂 BIDS Path Preview: None", font=("Arial", 12), fg="black", bg="#f0f0f5")
+    preview_path_label.pack(pady=(2, 0))
+
+    def update_path_preview(*args):
+        sid = subject_entry.get().strip().replace('\n', '').replace('\r', '')
+        ses = session_entry.get().strip().replace('\n', '').replace('\r', '')
+        task = task_combo.get()
+        
+        if sid and ses and task:
+            preview_path_label.config(text=f"📂 BIDS Path Preview: Output Folder/sub-{sid}/ses-{ses}/{task}/")
+        else:
+            preview_path_label.config(text="📂 BIDS Path Preview: Incomplete")
+
+    subject_entry.bind("<KeyRelease>", update_path_preview)
+    session_entry.bind("<KeyRelease>", update_path_preview)
+    task_combo.bind("<<ComboboxSelected>>", update_path_preview)
 
     def on_task_selected(event):
         if task_combo.get() == "custom":
@@ -338,15 +374,16 @@ def launch_app():
 
     task_combo.bind("<<ComboboxSelected>>", on_task_selected)
 
+    
+
     #filename_entry = labeled_entry("Custom File Label", "e.g. sub-01_ses-01_func_task-video")
 
     tk.Label(root, text="Camera Device", bg="#f0f0f5", font=("Arial", 11)).pack()
-    import cv2
     camera_options = []
     for i in range(4):
         cap = cv2.VideoCapture(i)
         if cap is not None and cap.read()[0]:
-            name = f"{i} - Camera {i}"
+            name = f"{i} - Built-in Camera" if i == 0 else f"{i} - Camera {i}"
             if "obs" in cap.getBackendName().lower():
                 name += " (OBS VirtualCam)"
             camera_options.append(name)
@@ -355,7 +392,7 @@ def launch_app():
             camera_options.append(f"{i} - (Unavailable)")
 
     camera_combo = ttk.Combobox(root, font=("Arial", 10), values=camera_options, state="readonly")
-    camera_combo.set(camera_options[0] if camera_options else "No Camera Found")
+    camera_combo.set("0 - Built-in Webcam")
     camera_combo.pack(pady=4)
 
 
@@ -373,6 +410,8 @@ def launch_app():
     output_dir_entry = tk.Entry(output_frame, font=("Arial", 11), width=40)
     output_dir_entry.pack(side=tk.LEFT, padx=(0, 4))
     tk.Button(output_frame, text="Browse", command=browse_output_directory).pack(side=tk.LEFT)
+
+
 
     tk.Button(root, text="🎬 Start Recording", font=("Arial", 11), bg="#4CAF50", fg="white", width=44, command=start_recording).pack(pady=6)
 
