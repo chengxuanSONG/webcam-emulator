@@ -24,7 +24,20 @@ This project provides a Python-based GUI application to emulate scientific data 
 
 ## 📦 Installation
 
-### Option 1 – conda users:
+To get started, follow these steps:
+
+### 1. 📁 Download the Latest Release
+
+- Go to the [Releases](https://github.com/chengxuanSONG/webcam-emulator/releases) page.
+- Download the latest `.zip` archive (e.g., `webcam-emulator-v1.1.0.zip`).
+- Extract the files to any folder on your computer.
+
+
+### 2. 🛠️ Set Up Your Python Environment
+
+> First-time users need to install required packages. You can use either conda or pip:
+
+### Option 1 (Recommend) – conda users:
 
 ```bash
 conda env create -f environment.yml
@@ -68,6 +81,7 @@ python app.py
 
 ---
 
+
 ## 💾 Output Formats
 
 - `.avi` – raw video file  
@@ -78,16 +92,14 @@ python app.py
 
 ---
 
-## 🧠 Tech Stack
+## 📊 Database Schema
 
-- Python 3.10+  
-- OpenCV  
-- h5py  
-- NumPy  
-- Tkinter  
-- SQLite3  
+Recording sessions are saved to an embedded SQLite database `recordings.db` in the root directory.
+
+See [`docs/database.md`](./docs/database.md) for full table definitions and schema documentation.
 
 ---
+
 
 ## 📝 License
 

@@ -1,4 +1,3 @@
-# ui/main_window.py (伪多摄像头版本)
 import os
 import cv2
 import time
@@ -76,7 +75,11 @@ def launch_app():
         session_id = session_entry.get()
         task_type = task_combo.get()
         fps = int(fps_entry.get())
-        total_frames = int(frame_entry.get())
+        if frame_mode.get() == "frame":
+            total_frames = int(total_entry.get())
+        else:
+            duration_seconds = float(total_entry.get())
+            total_frames = int(duration_seconds * fps)
         gain = gain_entry.get()
         exposure = exposure_entry.get()
         output_dir = output_dir_entry.get()
@@ -131,7 +134,9 @@ def launch_app():
         out.release()
 
         converter.save_frames_to_hdf5(frames, hdf5_file)
-        converter.split_and_save_channels(frames, channel_dir)
+        if save_channels_var.get():
+            converter.split_and_save_channels(frames, channel_dir)
+
 
         meta = metadata.generate_metadata(subject_id, session_id, frame_count, {
             "gain": gain,
@@ -179,39 +184,195 @@ def launch_app():
             tk.Label(frame, text=help_text, bg="#f0f0f5", font=("Arial", 9), fg="gray").pack(anchor="w")
         return entry
 
-    subject_entry = labeled_entry("Subject ID")
-    session_entry = labeled_entry("Session ID")
-    fps_entry = labeled_entry("Frame Rate (FPS)")
-    frame_entry = labeled_entry("Number of Frames", "e.g. 100 frames = 5s at 20 FPS")
-    gain_entry = labeled_entry("Gain(optional)", "Camera gain 0–255; leave blank to use 128")
-    exposure_entry = labeled_entry("Exposure(optional)", "Exposure time (leave blank for auto; default = -4.0)")
+    # Combine Subject ID and Session ID on the same line
+    id_frame = tk.Frame(root, bg="#f0f0f5")
+    id_frame.pack(fill="x", padx=10, pady=(6, 2))
+    # Subject ID
+    sub_label = tk.Label(id_frame, text="Subject ID", bg="#f0f0f5", font=("Arial", 12))
+    sub_label.pack(side=tk.LEFT)
+    subject_entry = tk.Entry(id_frame, font=("Arial", 12), width=12)
+    subject_entry.pack(side=tk.LEFT, padx=(4, 10))
 
+    # Session ID
+    ses_label = tk.Label(id_frame, text="Session ID", bg="#f0f0f5", font=("Arial", 12))
+    ses_label.pack(side=tk.LEFT)
+    session_entry = tk.Entry(id_frame, font=("Arial", 12), width=12)
+    session_entry.pack(side=tk.LEFT, padx=4)
+    tk.Label(root, text="Supports letters, numbers, and symbols", bg="#f0f0f5", fg="gray", font=("Arial", 9)).pack(anchor="w", padx=12)
+        
+    #FPS settings
+    fps_frame = tk.Frame(root, bg="#f0f0f5")
+    fps_frame.pack(pady=2, fill="x")
+
+    fps_left = tk.Frame(fps_frame, bg="#f0f0f5")
+    fps_left.pack(side=tk.LEFT, padx=8, expand=True, fill="x")
+    tk.Label(fps_left, text="Frame Rate (FPS)", bg="#f0f0f5", font=("Arial", 11)).pack(anchor="w")
+    fps_entry = tk.Entry(fps_left, font=("Arial", 11))
+    fps_entry.pack(fill="x")
+    tk.Label(fps_left, text="Must be an integer (e.g., 20, 30)", bg="#f0f0f5", fg="gray", font=("Arial", 9)).pack(anchor="w")
+
+
+    frame_mode = tk.StringVar(value="frame") 
+
+    mode_frame = tk.Frame(root, bg="#f0f0f5")
+    mode_frame.pack(anchor="w", padx=10, pady=(4, 0))
+    tk.Label(mode_frame, text="Choose capture mode:", bg="#f0f0f5", font=("Arial", 10)).pack(side=tk.LEFT)
+    tk.Radiobutton(mode_frame, text="Number of Frames", variable=frame_mode, value="frame", bg="#f0f0f5").pack(side=tk.LEFT, padx=8)
+    tk.Radiobutton(mode_frame, text="Duration (Seconds)", variable=frame_mode, value="time", bg="#f0f0f5").pack(side=tk.LEFT, padx=8)
+
+
+    frame_input_frame = tk.Frame(root, bg="#f0f0f5")
+    frame_input_frame.pack(pady=2, fill="x")
+
+    frame_right = tk.Frame(frame_input_frame, bg="#f0f0f5")
+    frame_right.pack(side=tk.LEFT, padx=8, expand=True, fill="x")
+    total_label = tk.Label(frame_right, text="Number of Frames", bg="#f0f0f5", font=("Arial", 11))
+    total_label.pack(anchor="w")
+    total_entry = tk.Entry(frame_right, font=("Arial", 11))
+    total_entry.pack(fill="x")
+    total_hint = tk.Label(frame_right, text="e.g., 100 = 5 seconds @ 20 FPS", bg="#f0f0f5", fg="gray", font=("Arial", 9))
+    total_hint.pack(anchor="w")
+
+
+    def update_frame_mode():
+        if frame_mode.get() == "frame":
+            total_label.config(text="Number of Frames")
+            total_hint.config(text="e.g., 100 = 5 seconds @ 20 FPS")
+        else:
+            total_label.config(text="Duration (Seconds")
+            total_hint.config(text="e.g., 5 = 5 seconds")
+
+    frame_mode.trace_add("write", lambda *args: update_frame_mode())
+
+    #gain settings
+    ex_frame = tk.Frame(root, bg="#f0f0f5")
+    ex_frame.pack(pady=2, fill="x")
+
+    # Gain
+    gain_block = tk.Frame(ex_frame, bg="#f0f0f5")
+    gain_block.pack(side=tk.LEFT, padx=8, expand=True, fill="x")
+    tk.Label(gain_block, text="Gain (optional)", bg="#f0f0f5", font=("Arial", 11)).pack(anchor="w")
+    gain_entry = tk.Entry(gain_block, font=("Arial", 11), fg="gray")
+    gain_entry.insert(0, "128")
+    gain_entry.pack(fill="x")
+
+    def on_gain_focus_in(event):
+        if gain_entry.get() == "128":
+            gain_entry.delete(0, tk.END)
+            gain_entry.config(fg="black")
+
+    def on_gain_focus_out(event):
+        if gain_entry.get().strip() == "":
+            gain_entry.insert(0, "128")
+            gain_entry.config(fg="gray")
+
+    gain_entry.bind("<FocusIn>", on_gain_focus_in)
+    gain_entry.bind("<FocusOut>", on_gain_focus_out)
+
+    # Exposure
+    exposure_block = tk.Frame(ex_frame, bg="#f0f0f5")
+    exposure_block.pack(side=tk.LEFT, padx=8, expand=True, fill="x")
+    tk.Label(exposure_block, text="Exposure (optional)", bg="#f0f0f5", font=("Arial", 11)).pack(anchor="w")
+    exposure_entry = tk.Entry(exposure_block, font=("Arial", 11), fg="gray")
+    exposure_entry.insert(0, " -4.0")
+    exposure_entry.pack(fill="x")
+
+    def on_exposure_focus_in(event):
+        if exposure_entry.get() == "-4.0":
+            exposure_entry.delete(0, tk.END)
+            exposure_entry.config(fg="black")
+
+    def on_exposure_focus_out(event):
+        if exposure_entry.get().strip() == "":
+            exposure_entry.insert(0, "-4.0")
+            exposure_entry.config(fg="gray")
+
+    
+
+
+    # Data Type (folder)
+    type_frame = tk.Frame(root, bg="#f0f0f5")
+    type_frame.pack(fill="x", padx=10, pady=(4, 2))
+    tk.Label(type_frame, text="Data Type (folder)", bg="#f0f0f5", font=("Arial", 11)).pack(side=tk.LEFT)
+
+    # Help button for data type info
+    info_text = """
+    func: functional recording (e.g., task-video)
+    anat: anatomical or static imaging (e.g., T1w, infrared)
+    fmap: field mapping or calibration (e.g., darkmap)
+    custom: define your own
+    """
+
+    def show_data_type_help():
+        tk.messagebox.showinfo("Data Type Explanation", info_text)
+
+    help_button = tk.Button(type_frame, text="?", font=("Arial", 8, "bold"), width=2, bg="#ddd", command=show_data_type_help)
+    help_button.pack(side=tk.LEFT, padx=6)
+
+    # Combine task type and filename base on same line
+    filename_frame = tk.Frame(root, bg="#f0f0f5")
+    filename_frame.pack(fill="x", padx=10, pady=(4, 4))
+
+    # Task type dropdown
+    tk.Label(filename_frame, text="Data Type", bg="#f0f0f5", font=("Arial", 10)).pack(side=tk.LEFT)
+    task_combo = ttk.Combobox(filename_frame, font=("Arial", 10), state="readonly", width=10)
+    task_combo['values'] = ["func", "anat", "fmap", "custom"]
+    task_combo.set("func")
+    task_combo.pack(side=tk.LEFT, padx=4)
+
+    # File name base
+    tk.Label(filename_frame, text="Custom FIle Label", bg="#f0f0f5", font=("Arial", 10)).pack(side=tk.LEFT, padx=(10, 0))
+    filename_entry = tk.Entry(filename_frame, font=("Arial", 10), width=22)
+    filename_entry.pack(side=tk.LEFT, padx=(4, 0))
+    # Recording label hint
+    tk.Label(root, text="                                                                     e.g. sub-01_ses-01_func_task-video", bg="#f0f0f5", fg="gray", font=("Arial", 9)).pack(anchor="w", padx=12, pady=(0, 2))
+
+    def on_task_selected(event):
+        if task_combo.get() == "custom":
+            import tkinter.simpledialog as sd
+            custom_type = sd.askstring("Custom Data Type", "Enter your custom data type (e.g., calibration):")
+            if custom_type:
+                task_combo.set(custom_type)
+            else:
+                task_combo.set("func")
+
+    task_combo.bind("<<ComboboxSelected>>", on_task_selected)
+
+    #filename_entry = labeled_entry("Custom File Label", "e.g. sub-01_ses-01_func_task-video")
+
+    tk.Label(root, text="Camera Device", bg="#f0f0f5", font=("Arial", 11)).pack()
+    import cv2
+    camera_options = []
+    for i in range(4):
+        cap = cv2.VideoCapture(i)
+        if cap is not None and cap.read()[0]:
+            name = f"{i} - Camera {i}"
+            if "obs" in cap.getBackendName().lower():
+                name += " (OBS VirtualCam)"
+            camera_options.append(name)
+            cap.release()
+        else:
+            camera_options.append(f"{i} - (Unavailable)")
+
+    camera_combo = ttk.Combobox(root, font=("Arial", 10), values=camera_options, state="readonly")
+    camera_combo.set(camera_options[0] if camera_options else "No Camera Found")
+    camera_combo.pack(pady=4)
+
+
+    # Optional checkbox: whether to save RGB channels separately
+    save_channels_var = tk.BooleanVar(value=True)
+    save_channels_check = tk.Checkbutton(root, text="Save RGB Channels Separately", variable=save_channels_var, bg="#f0f0f5", font=("Arial", 10))
+    save_channels_check.pack(anchor="w", padx=12)
+
+    
+    exposure_entry.bind("<FocusIn>", on_exposure_focus_in)
+    exposure_entry.bind("<FocusOut>", on_exposure_focus_out)
     output_frame = tk.Frame(root, bg="#f0f0f5")
     output_frame.pack(pady=2)
     tk.Label(output_frame, text="Output Folder", bg="#f0f0f5", font=("Arial", 11)).pack(anchor="w")
     output_dir_entry = tk.Entry(output_frame, font=("Arial", 11), width=40)
     output_dir_entry.pack(side=tk.LEFT, padx=(0, 4))
     tk.Button(output_frame, text="Browse", command=browse_output_directory).pack(side=tk.LEFT)
-
-    filename_entry = labeled_entry("File Name Base", "e.g. sub-01_ses-01_task-video")
-
-    tk.Label(root, text="Data Type (folder)", bg="#f0f0f5", font=("Arial", 11)).pack()
-    task_combo = ttk.Combobox(root, font=("Arial", 10), state="readonly")
-    task_combo['values'] = ["func", "anat", "fmap", "custom"]
-    task_combo.set("func")
-    task_combo.pack(pady=4)
-
-    tk.Label(root, text="Camera Device", bg="#f0f0f5", font=("Arial", 11)).pack()
-    camera_combo = ttk.Combobox(root, font=("Arial", 10))
-    camera_combo['values'] = [
-        "0 - Built-in Webcam",
-        "1 - External Cam A",
-        "2 - IR Sensor B",
-        "3 - SPAD Array (Sim)",
-        "4 - VirtualCam"
-    ]
-    camera_combo.set(camera_combo['values'][0])
-    camera_combo.pack(pady=4)
 
     tk.Button(root, text="🎬 Start Recording", font=("Arial", 11), bg="#4CAF50", fg="white", width=44, command=start_recording).pack(pady=6)
 
